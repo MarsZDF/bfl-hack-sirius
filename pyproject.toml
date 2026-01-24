@@ -36,6 +36,7 @@ dependencies = [
     "pillow>=10.0.0",
     "imageio[ffmpeg]>=2.31.0",
     "elemental-gallium[grid]",
+    "runware>=0.1.0",
 ]
 
 [project.optional-dependencies]

@@ -39,6 +39,14 @@ ANIMATOR_MODEL: Final[str] = FLUX_PRO  # Use Pro for all frames (as requested)
 CLAUDE_MODEL: Final[str] = "claude-sonnet-4-20250514"
 
 # =============================================================================
+# Runware Models
+# =============================================================================
+
+RUNWARE_FLUX_PRO: Final[str] = "runware:101@1"  # Default Flux.1 Pro on Runware
+RUNWARE_FLUX_DEV: Final[str] = "runware:100@1"
+RUNWARE_FLUX_SCHNELL: Final[str] = "runware:99@1"
+
+# =============================================================================
 # API Endpoints
 # =============================================================================
 
@@ -80,6 +88,13 @@ def get_anthropic_api_key() -> str:
             "ANTHROPIC_API_KEY environment variable not set. "
             "Get your API key at https://console.anthropic.com/"
         )
+    return key
+
+
+def get_runware_api_key() -> str:
+    """Get Runware API key from environment."""
+    key = os.environ.get("RUNWARE_API_KEY")
+    # Return None if not set, we'll fall back to BFL
     return key
 
 

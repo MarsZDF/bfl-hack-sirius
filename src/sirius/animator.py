@@ -8,7 +8,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from ._bfl_client import BFLClient
 from ._config import (
@@ -34,33 +34,21 @@ def generate_frame(
     config: GenerationConfig,
     output_dir: str,
     model: str,
-    client: BFLClient,
+    client: Any,
 ) -> Frame:
-    """Generate a single frame.
-
-    Args:
-        index: Frame index in sequence.
-        prompt: Generation prompt.
-        config: Generation configuration.
-        output_dir: Directory to save frame.
-        model: FLUX model to use.
-        client: BFL client instance.
-
-    Returns:
-        Generated Frame object.
-
-    Raises:
-        FrameGenerationError: If generation fails.
-    """
+    """Generate a single frame."""
     try:
+        # Check if client supports guidance/steps
+        # Most models (except Flux Dev) don't use these in the same way,
+        # but our clients should handle them or ignore them.
         image, duration_ms = client.generate(
             prompt=prompt,
             model=model,
             seed=config.seed,
             width=config.width,
             height=config.height,
-            guidance=config.guidance if model == "flux-dev" else None,
-            steps=config.steps if model == "flux-dev" else None,
+            guidance=config.guidance,
+            steps=config.steps,
         )
 
         # Save frame with padded index
@@ -90,7 +78,7 @@ def generate_frames_parallel(
     config: GenerationConfig,
     output_dir: str,
     model: str = ANIMATOR_MODEL,
-    client: BFLClient | None = None,
+    client: Any | None = None,
     on_progress: FrameProgressCallback | None = None,
 ) -> list[Frame]:
     """Generate frames in parallel using thread pool.
@@ -174,7 +162,7 @@ def generate_anchors(
     prompt_b: str,
     config: GenerationConfig,
     output_dir: str,
-    client: BFLClient | None = None,
+    client: Any | None = None,
 ) -> tuple[Frame, Frame]:
     """Generate anchor frames (first and last) with high-quality model.
 
@@ -222,7 +210,9 @@ def animate(
     config: GenerationConfig | None = None,
     output_dir: str = "outputs/frames",
     use_anchors: bool = True,
-    client: BFLClient | None = None,
+    animator_model: str = ANIMATOR_MODEL,
+    anchor_model: str = ANCHOR_MODEL,
+    client: Any | None = None,
     on_progress: FrameProgressCallback | None = None,
 ) -> list[Frame]:
     """Full animation flow: generate all frames from transition plan.
@@ -263,7 +253,7 @@ def animate(
             prompt=plan.prompts[0],
             config=config,
             output_dir=str(frames_dir),
-            model=ANCHOR_MODEL,
+            model=anchor_model,
             client=client,
         )
         all_frames.append(anchor_a)
@@ -278,7 +268,7 @@ def animate(
                 prompts=middle_prompts,
                 config=config,
                 output_dir=str(frames_dir),
-                model=ANIMATOR_MODEL,
+                model=animator_model,
                 client=client,
                 on_progress=lambda c, t, s: on_progress(
                     1 + c, plan.frame_count, s
@@ -303,7 +293,7 @@ def animate(
             prompt=plan.prompts[-1],
             config=config,
             output_dir=str(frames_dir),
-            model=ANCHOR_MODEL,
+            model=anchor_model,
             client=client,
         )
         all_frames.append(anchor_b)
@@ -317,7 +307,7 @@ def animate(
             prompts=plan.prompts,
             config=config,
             output_dir=str(frames_dir),
-            model=ANIMATOR_MODEL,
+            model=animator_model,
             client=client,
             on_progress=on_progress,
         )

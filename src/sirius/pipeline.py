@@ -12,7 +12,14 @@ import gallium
 
 from ._anthropic_client import ClaudeClient
 from ._bfl_client import BFLClient
-from ._config import DEFAULT_FRAME_COUNT, DEFAULT_SEED
+from ._runware_client import RunwareClient
+from ._config import (
+    DEFAULT_FRAME_COUNT,
+    DEFAULT_SEED,
+    RUNWARE_FLUX_PRO,
+    RUNWARE_FLUX_DEV,
+    get_runware_api_key,
+)
 from ._types import (
     Frame,
     GenerationConfig,
@@ -106,7 +113,20 @@ def morph(
 
     # Create clients (reused across stages)
     claude_client = ClaudeClient()
-    bfl_client = BFLClient()
+
+    # Choose image generation client
+    runware_key = get_runware_api_key()
+    if runware_key:
+        gen_client = RunwareClient(runware_key)
+        # Use Runware model IDs
+        anim_model = RUNWARE_FLUX_DEV
+        anch_model = RUNWARE_FLUX_PRO
+    else:
+        gen_client = BFLClient()
+        from ._config import ANCHOR_MODEL, ANIMATOR_MODEL
+
+        anim_model = ANIMATOR_MODEL
+        anch_model = ANCHOR_MODEL
 
     # Generation config
     if config is None:
@@ -144,7 +164,9 @@ def morph(
             config=config,
             output_dir=str(frames_dir),
             use_anchors=True,
-            client=bfl_client,
+            animator_model=anim_model,
+            anchor_model=anch_model,
+            client=gen_client,
             on_progress=animator_progress,
         )
 
