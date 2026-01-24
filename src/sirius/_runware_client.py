@@ -148,22 +148,38 @@ class RunwareClient:
         steps: int | None = None,
         timeout: float = 120.0,
     ) -> tuple[Image.Image, int]:
-        """Generate an image using Runware (synchronous wrapper)."""
-        
+        """Generate an image using Runware (synchronous wrapper).
+
+        This method handles both Jupyter (with nest_asyncio) and
+        ThreadPoolExecutor contexts for parallel generation.
+        """
+        # In threads (from ThreadPoolExecutor), there's no running loop
+        # In Jupyter main thread, nest_asyncio patches run_until_complete
         try:
             loop = asyncio.get_running_loop()
+            # We have a running loop (Jupyter) - nest_asyncio allows this
         except RuntimeError:
+            # No running loop (thread pool worker) - create one
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        return loop.run_until_complete(
-            self._generate_async(
-                prompt=prompt,
-                model=model,
-                seed=seed,
-                width=width,
-                height=height,
-                steps=steps,
-                guidance=guidance,
+        try:
+            return loop.run_until_complete(
+                self._generate_async(
+                    prompt=prompt,
+                    model=model,
+                    seed=seed,
+                    width=width,
+                    height=height,
+                    steps=steps,
+                    guidance=guidance,
+                )
             )
-        )
+        except RuntimeError as e:
+            if "already running" in str(e):
+                # nest_asyncio not applied - provide helpful error
+                raise RuntimeError(
+                    "Event loop already running. In Jupyter, run:\n"
+                    "  import nest_asyncio; nest_asyncio.apply()"
+                ) from e
+            raise
