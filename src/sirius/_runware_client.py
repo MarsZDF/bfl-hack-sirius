@@ -136,66 +136,34 @@ class RunwareClient:
                 except Exception:
                     pass
 
-        def generate(
+    def generate(
+        self,
+        prompt: str,
+        *,
+        model: str = RUNWARE_FLUX_PRO,
+        seed: int = 42,
+        width: int = 1024,
+        height: int = 576,
+        guidance: float | None = None,
+        steps: int | None = None,
+        timeout: float = 120.0,
+    ) -> tuple[Image.Image, int]:
+        """Generate an image using Runware (synchronous wrapper)."""
+        
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-            self,
-
-            prompt: str,
-
-            *,
-
-            model: str = RUNWARE_FLUX_PRO,
-
-            seed: int = 42,
-
-            width: int = 1024,
-
-            height: int = 576,
-
-            guidance: float | None = None,
-
-            steps: int | None = None,
-
-            timeout: float = 120.0,
-
-        ) -> tuple[Image.Image, int]:
-
-            """Generate an image using Runware (synchronous wrapper)."""
-
-            
-
-            try:
-
-                loop = asyncio.get_running_loop()
-
-            except RuntimeError:
-
-                loop = asyncio.new_event_loop()
-
-                asyncio.set_event_loop(loop)
-
-    
-
-            return loop.run_until_complete(
-
-                self._generate_async(
-
-                    prompt=prompt,
-
-                    model=model,
-
-                    seed=seed,
-
-                    width=width,
-
-                    height=height,
-
-                    steps=steps,
-
-                    guidance=guidance,
-
-                )
-
+        return loop.run_until_complete(
+            self._generate_async(
+                prompt=prompt,
+                model=model,
+                seed=seed,
+                width=width,
+                height=height,
+                steps=steps,
+                guidance=guidance,
             )
-
-    
+        )
