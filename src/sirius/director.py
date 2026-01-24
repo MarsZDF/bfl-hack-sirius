@@ -70,8 +70,9 @@ Style: {transition_style}
 
 === CRITICAL RULES ===
 
-1. PACING: Frame 1 is 95% START, 5% END. Frame {num_frames} is 5% START, 95% END.
-   Distribute the transformation LINEARLY. No sudden jumps.
+1. PACING: Frame 1 MUST be visually indistinguishable from the START IMAGE description.
+   Frame {num_frames} MUST be visually indistinguishable from the END IMAGE description.
+   Distribute the transformation LINEARLY between them.
 
 2. LIGHTING: {lighting_instruction}
    The light source direction MUST remain consistent unless the style explicitly allows shifts.

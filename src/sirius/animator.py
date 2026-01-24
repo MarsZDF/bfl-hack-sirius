@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Callable
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from ._bfl_client import BFLClient
 from ._config import (
@@ -259,7 +259,10 @@ def animate(
             on_progress(0, plan.frame_count, "Processing start image...")
         
         img = Image.open(image_a).convert("RGB")
-        img = img.resize((config.width, config.height), Image.Resampling.LANCZOS)
+        # Resize preserving aspect ratio and pad
+        img.thumbnail((config.width, config.height), Image.Resampling.LANCZOS)
+        img = ImageOps.pad(img, (config.width, config.height), color="black")
+        
         path_a = frames_dir / "frame_000.png"
         img.save(path_a)
         
@@ -349,7 +352,10 @@ def animate(
     if image_b:
         # Use original image
         img = Image.open(image_b).convert("RGB")
-        img = img.resize((config.width, config.height), Image.Resampling.LANCZOS)
+        # Resize preserving aspect ratio and pad
+        img.thumbnail((config.width, config.height), Image.Resampling.LANCZOS)
+        img = ImageOps.pad(img, (config.width, config.height), color="black")
+        
         path_b = frames_dir / f"frame_{plan.frame_count - 1:03d}.png"
         img.save(path_b)
         
