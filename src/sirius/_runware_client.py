@@ -19,31 +19,12 @@ from .exceptions import (
     GenerationTimeoutError,
 )
 
-# Thread-local storage for event loops and clients
-_thread_local = threading.local()
-
 # Enable nested event loops (needed for Jupyter/Colab)
 try:
     import nest_asyncio
     nest_asyncio.apply()
 except ImportError:
     pass
-
-
-def _get_thread_loop() -> asyncio.AbstractEventLoop:
-    """Get or create an event loop for the current thread."""
-    try:
-        # Try to get the running loop first (works in Jupyter/Colab)
-        loop = asyncio.get_running_loop()
-        return loop
-    except RuntimeError:
-        pass
-
-    # No running loop - create or get one for this thread
-    if not hasattr(_thread_local, 'loop') or _thread_local.loop is None or _thread_local.loop.is_closed():
-        _thread_local.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(_thread_local.loop)
-    return _thread_local.loop
 
 
 class RunwareClient:
@@ -58,6 +39,20 @@ class RunwareClient:
         self.api_key = api_key or get_runware_api_key()
         if not self.api_key:
             raise ValueError("RUNWARE_API_KEY not set")
+        self._runware: Runware | None = None
+
+    async def __aenter__(self) -> "RunwareClient":
+        """Async context manager entry."""
+        if not self._runware:
+            self._runware = Runware(api_key=self.api_key)
+        if not self._runware.connected:
+            await self._runware.connect()
+        return self
+
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        """Async context manager exit."""
+        if self._runware and self._runware.connected:
+            await self._runware.disconnect()
 
     async def _generate_async(
         self,
@@ -72,11 +67,15 @@ class RunwareClient:
         """Internal async generation method."""
         start_time = time.time()
 
-        # Always create a new Runware instance to avoid state pollution
-        runware = Runware(api_key=self.api_key)
+        # Use persistent instance if available, otherwise create one
+        runware = self._runware or Runware(api_key=self.api_key)
+        
+        # Track if we own this connection (to close it if we created it locally)
+        own_connection = self._runware is None
 
         try:
-            await runware.connect()
+            if not runware.connected:
+                await runware.connect()
 
             # Build request parameters dynamically
             params = {
@@ -129,40 +128,74 @@ class RunwareClient:
         except Exception as e:
             raise GenerationError(f"Runware generation failed: {e}") from e
         finally:
-            # Always disconnect to clean up websockets
+            # Only disconnect if we created the instance locally (not persistent)
+            if own_connection:
+                try:
+                    if runware.connected:
+                        await runware.disconnect()
+                except Exception:
+                    pass
+
+        def generate(
+
+            self,
+
+            prompt: str,
+
+            *,
+
+            model: str = RUNWARE_FLUX_PRO,
+
+            seed: int = 42,
+
+            width: int = 1024,
+
+            height: int = 576,
+
+            guidance: float | None = None,
+
+            steps: int | None = None,
+
+            timeout: float = 120.0,
+
+        ) -> tuple[Image.Image, int]:
+
+            """Generate an image using Runware (synchronous wrapper)."""
+
+            
+
             try:
-                if runware.connected:
-                    await runware.disconnect()
-            except Exception:
-                pass
 
-    def generate(
-        self,
-        prompt: str,
-        *,
-        model: str = RUNWARE_FLUX_PRO,
-        seed: int = 42,
-        width: int = 1024,
-        height: int = 576,
-        guidance: float | None = None,
-        steps: int | None = None,
-        timeout: float = 120.0,
-    ) -> tuple[Image.Image, int]:
-        """Generate an image using Runware (synchronous wrapper)."""
-        
-        # Get thread-local event loop (or running loop)
-        loop = _get_thread_loop()
+                loop = asyncio.get_running_loop()
 
-        # If loop is running (e.g. Colab), nest_asyncio allows run_until_complete
-        # If loop is new (thread), run_until_complete works standardly
-        return loop.run_until_complete(
-            self._generate_async(
-                prompt=prompt,
-                model=model,
-                seed=seed,
-                width=width,
-                height=height,
-                steps=steps,
-                guidance=guidance,
+            except RuntimeError:
+
+                loop = asyncio.new_event_loop()
+
+                asyncio.set_event_loop(loop)
+
+    
+
+            return loop.run_until_complete(
+
+                self._generate_async(
+
+                    prompt=prompt,
+
+                    model=model,
+
+                    seed=seed,
+
+                    width=width,
+
+                    height=height,
+
+                    steps=steps,
+
+                    guidance=guidance,
+
+                )
+
             )
-        )
+
+    
