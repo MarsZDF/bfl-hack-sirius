@@ -22,7 +22,7 @@ Example:
 __version__ = "0.1.0"
 
 # Main API
-from .pipeline import morph, morph_async, morph_stream
+from .pipeline import morph, morph_async, morph_stream, plan_morph
 
 # Types
 from ._types import (
@@ -60,7 +60,7 @@ from .exceptions import (
 )
 
 # Individual pipeline stages (for advanced usage)
-from .director import analyze_images, direct, plan_transition
+from .director import analyze_images, describe_images, direct, plan_transition
 from .animator import animate, create_config, generate_frames_parallel
 from .editor import assemble_gif, assemble_video, create_preview, edit
 
@@ -71,6 +71,7 @@ __all__ = [
     "morph",
     "morph_async",
     "morph_stream",
+    "plan_morph",
     # Types
     "Frame",
     "GenerationConfig",
@@ -99,6 +100,7 @@ __all__ = [
     "VisionAPIError",
     # Pipeline stages
     "analyze_images",
+    "describe_images",
     "animate",
     "assemble_gif",
     "assemble_video",

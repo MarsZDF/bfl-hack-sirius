@@ -39,6 +39,20 @@ class ImageAnalysis:
             "summary": self.summary,
         }
 
+    def describe(self) -> str:
+        """Return a human-readable description of the analysis."""
+        colors_str = ", ".join(self.colors) if self.colors else "N/A"
+        return f"""Summary: {self.summary}
+
+Subject: {self.subject}
+Style: {self.style}
+Lighting: {self.lighting}
+Mood: {self.mood}
+Colors: {colors_str}
+
+Full Prompt:
+{self.prompt}"""
+
 
 @dataclass
 class TransitionPlan:
@@ -59,6 +73,35 @@ class TransitionPlan:
             "analysis_a": self.analysis_a.to_dict(),
             "analysis_b": self.analysis_b.to_dict(),
         }
+
+    def describe(self) -> str:
+        """Return a human-readable description of the plan and image analyses."""
+        lines = [
+            "=" * 60,
+            "TRANSITION PLAN",
+            "=" * 60,
+            f"Style: {self.transition_style.value}",
+            f"Frames: {self.frame_count}",
+            "",
+            "-" * 60,
+            "START IMAGE (A)",
+            "-" * 60,
+            self.analysis_a.describe(),
+            "",
+            "-" * 60,
+            "END IMAGE (B)",
+            "-" * 60,
+            self.analysis_b.describe(),
+            "",
+            "-" * 60,
+            "FRAME PROMPTS",
+            "-" * 60,
+        ]
+        for i, prompt in enumerate(self.prompts):
+            lines.append(f"\n[Frame {i + 1}/{self.frame_count}]")
+            lines.append(prompt)
+        lines.append("=" * 60)
+        return "\n".join(lines)
 
 
 @dataclass
@@ -126,7 +169,6 @@ class MorphResult:
     frames: list[Frame]  # All generated frames
     plan: TransitionPlan  # The transition plan used
     duration_ms: int  # Total operation time
-    experiment_ids: list[int] = field(default_factory=list)  # Gallium tracking IDs
     transition_id: str = ""  # Unique ID for this morph
     created_at: datetime = field(default_factory=datetime.now)
 
@@ -137,7 +179,6 @@ class MorphResult:
             "frames": [f.to_dict() for f in self.frames],
             "plan": self.plan.to_dict(),
             "duration_ms": self.duration_ms,
-            "experiment_ids": self.experiment_ids,
             "transition_id": self.transition_id,
             "created_at": self.created_at.isoformat(),
         }

@@ -31,12 +31,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "anthropic>=0.39.0",
-    "requests>=2.31.0",
-    "pillow>=10.0.0",
-    "imageio[ffmpeg]>=2.31.0",
-    "elemental-gallium[grid]",
+    "anthropic>=0.3.0",
+    "requests>=2.20.0",
+    "pillow>=9.0.0",
+    "imageio[ffmpeg]>=2.9.0",
     "runware>=0.1.0",
+    "rich>=10.0.0",
+    "nest-asyncio>=1.5.0",
 ]
 
 [project.optional-dependencies]

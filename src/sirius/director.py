@@ -59,6 +59,8 @@ START PROMPT (detailed):
 END PROMPT (detailed):
 {prompt_b}
 
+USER NOTES: {user_context}
+
 === TRANSITION STYLE ===
 Style: {transition_style}
 {transition_instructions}
@@ -76,9 +78,17 @@ Style: {transition_style}
 3. STYLE CONSISTENCY: Every prompt must include these exact phrases:
    "{style_keywords}"
 
-4. STRUCTURE: Each prompt must follow this format:
-   "[Subject description]. [Action/transformation]. [Environment]. 
-    [Lighting: direction and quality]. [Color palette]. [Style keywords]."
+4. FLUX PROMPTING STYLE (NOVELIST):
+   Write like a novelist, not a search engine. Use this exact structure:
+   "[Subject]. [Setting]. [Details]. [Lighting]. [Atmosphere]. [Style keywords]."
+   
+   - Subject: Clear, front-loaded description.
+   - Setting: Where is it? Background elements.
+   - Details: Textures, materials, specific features.
+   - Lighting: Describe it like a photographer (e.g., "soft diffused lighting from the left", "harsh direct sunlight").
+   - Atmosphere: Emotional tone (e.g., "serene", "ominous").
+   - NO negative prompts. Describe what IS there.
+   - Use precise color names (e.g., "obsidian black", "amber gold").
 
 5. ADJACENT SIMILARITY: Frame N and Frame N+1 should share at least 70% of 
    their descriptive words. Smooth transitions come from gradual word changes.
@@ -136,6 +146,7 @@ def plan_transition(
     frame_count: int = 16,
     style: TransitionStyle | str = TransitionStyle.MORPH,
     client: ClaudeClient | None = None,
+    user_context: str | None = None,
 ) -> TransitionPlan:
     """Generate intermediate prompts for the transition.
 
@@ -188,6 +199,7 @@ def plan_transition(
         lighting_a=analysis_a.lighting,
         lighting_b=analysis_b.lighting,
         style_keywords=style_keywords,
+        user_context=user_context or "No specific user instructions.",
     )
 
     response_text = client.generate_text(prompt)
@@ -202,12 +214,56 @@ def plan_transition(
     )
 
 
+def describe_images(
+    image_a_path: str,
+    image_b_path: str,
+    client: ClaudeClient | None = None,
+) -> str:
+    """Analyze images and return a human-readable description of what Claude sees.
+
+    This is useful for debugging and understanding what the model extracts
+    from your images before running the full pipeline.
+
+    Args:
+        image_a_path: Path to first (source) image.
+        image_b_path: Path to second (target) image.
+        client: Optional Claude client.
+
+    Returns:
+        Human-readable string describing both images.
+
+    Example:
+        >>> from sirius import describe_images
+        >>> print(describe_images("cat.png", "dog.png"))
+    """
+    analysis_a, analysis_b = analyze_images(image_a_path, image_b_path, client)
+
+    lines = [
+        "=" * 60,
+        "IMAGE ANALYSIS",
+        "=" * 60,
+        "",
+        "-" * 60,
+        "IMAGE A (Start)",
+        "-" * 60,
+        analysis_a.describe(),
+        "",
+        "-" * 60,
+        "IMAGE B (End)",
+        "-" * 60,
+        analysis_b.describe(),
+        "=" * 60,
+    ]
+    return "\n".join(lines)
+
+
 def direct(
     image_a_path: str,
     image_b_path: str,
     frame_count: int = 16,
     style: TransitionStyle | str = TransitionStyle.MORPH,
     client: ClaudeClient | None = None,
+    user_context: str | None = None,
 ) -> TransitionPlan:
     """Full Director flow: analyze images and plan transition in one call.
 
@@ -239,6 +295,7 @@ def direct(
         frame_count=frame_count,
         style=style,
         client=client,
+        user_context=user_context,
     )
 
     return plan

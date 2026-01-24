@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 import imageio.v3 as iio
+import numpy as np
 from PIL import Image
 
 from ._types import Frame, VideoConfig
@@ -227,6 +228,66 @@ def create_preview(
 
     canvas.save(output_path)
     return output_path
+
+
+def create_fallback_video(
+    image_a_path: str,
+    image_b_path: str,
+    output_path: str,
+    frame_count: int = 16,
+    config: VideoConfig | None = None,
+) -> str:
+    """Create a simple cross-dissolve video when generation fails.
+
+    Args:
+        image_a_path: Path to start image.
+        image_b_path: Path to end image.
+        output_path: Path for output video.
+        frame_count: Number of frames to generate.
+        config: Video configuration.
+
+    Returns:
+        Path to output video.
+    """
+    if config is None:
+        config = VideoConfig()
+
+    try:
+        # Load images
+        img_a = Image.open(image_a_path).convert("RGB")
+        img_b = Image.open(image_b_path).convert("RGB")
+
+        # Resize B to match A
+        if img_a.size != img_b.size:
+            img_b = img_b.resize(img_a.size, Image.Resampling.LANCZOS)
+
+        # Generate frames
+        frames = []
+        for i in range(frame_count):
+            alpha = i / max(1, frame_count - 1)
+            # Cross-dissolve
+            blended = Image.blend(img_a, img_b, alpha)
+            frames.append(np.array(blended))
+
+        # Handle boomerang
+        if config.boomerang:
+            frames += frames[-2:0:-1]
+
+        # Ensure output directory
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+        # Write video
+        iio.imwrite(
+            output_path,
+            frames,
+            fps=config.framerate,
+            codec=config.codec,
+            quality=10 - (config.quality // 5),
+        )
+        return output_path
+
+    except Exception as e:
+        raise VideoEncodingError(f"Fallback video creation failed: {e}", output_path=output_path) from e
 
 
 def edit(

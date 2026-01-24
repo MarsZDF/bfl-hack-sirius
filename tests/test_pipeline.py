@@ -4,20 +4,15 @@ from unittest.mock import MagicMock, patch
 from sirius.pipeline import morph
 from sirius._types import MorphResult
 
-@patch("sirius.pipeline.ClaudeClient")
-@patch("sirius.pipeline.BFLClient")
-@patch("sirius.pipeline.direct")
-@patch("sirius.pipeline.animate")
 @patch("sirius.pipeline.edit")
-@patch("sirius.pipeline.gallium")
-def test_morph_pipeline(
-    mock_gallium,
-    mock_edit,
-    mock_animate,
+@patch("sirius.pipeline.animate")
+@patch("sirius.pipeline.direct")
+def test_morph_end_to_end(
     mock_direct,
-    mock_bfl,
-    mock_claude,
-    tmp_path
+    mock_animate,
+    mock_edit,
+    mock_bfl_client,
+    mock_claude_client,
 ):
     """Test the full morph pipeline orchestration."""
     # Setup mocks
@@ -48,4 +43,3 @@ def test_morph_pipeline(
     mock_direct.assert_called_once()
     mock_animate.assert_called_once()
     mock_edit.assert_called_once()
-    mock_gallium.log.assert_called()

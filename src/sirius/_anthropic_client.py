@@ -2,10 +2,12 @@
 
 import base64
 import json
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
 import anthropic
+from PIL import Image
 
 from ._config import CLAUDE_MODEL, get_anthropic_api_key
 from .exceptions import AnalysisParseError, ImageLoadError, VisionAPIError
@@ -55,7 +57,29 @@ class ClaudeClient:
 
         try:
             with open(path, "rb") as f:
-                image_data = base64.standard_b64encode(f.read()).decode("utf-8")
+                image_bytes = f.read()
+
+            # Resize if too large (> 4MB) or dimensions > 1568px (Claude optimal)
+            if len(image_bytes) > 4 * 1024 * 1024:
+                img = Image.open(BytesIO(image_bytes))
+                
+                # Calculate new size maintaining aspect ratio
+                max_dim = 1568
+                if max(img.size) > max_dim:
+                    img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+                
+                # Convert to RGB if necessary (e.g. RGBA to JPEG)
+                if img.mode in ('RGBA', 'P') and suffix in ['.jpg', '.jpeg']:
+                    img = img.convert('RGB')
+                
+                # Save to buffer
+                buffer = BytesIO()
+                # Use original format if possible, else JPEG for compression
+                save_format = "JPEG" if suffix in ['.jpg', '.jpeg'] else (img.format or "PNG")
+                img.save(buffer, format=save_format, quality=85, optimize=True)
+                image_bytes = buffer.getvalue()
+
+            image_data = base64.standard_b64encode(image_bytes).decode("utf-8")
             return image_data, media_type
         except Exception as e:
             raise ImageLoadError(image_path, str(e)) from e

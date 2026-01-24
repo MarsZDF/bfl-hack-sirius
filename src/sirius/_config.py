@@ -33,18 +33,24 @@ FLUX_PRO: Final[str] = "flux-2-pro"  # Highest quality (FLUX.2 Pro)
 
 # Default models for different roles
 ANCHOR_MODEL: Final[str] = FLUX_PRO  # Quality for first/last frames
-ANIMATOR_MODEL: Final[str] = FLUX_PRO  # Use Pro for all frames (as requested)
+ANIMATOR_MODEL: Final[str] = FLUX_KLEIN  # Speed for middle frames
 
 # Claude model
 CLAUDE_MODEL: Final[str] = "claude-sonnet-4-20250514"
 
 # =============================================================================
-# Runware Models
+# Runware Models (FLUX.2 via Runware)
+# See: https://runware.ai/models
 # =============================================================================
 
-RUNWARE_FLUX_PRO: Final[str] = "runware:101@1"  # Default Flux.1 Pro on Runware
-RUNWARE_FLUX_DEV: Final[str] = "runware:100@1"
-RUNWARE_FLUX_SCHNELL: Final[str] = "runware:99@1"
+RUNWARE_FLUX_PRO: Final[str] = "bfl:5@1"  # FLUX.2 Pro
+RUNWARE_FLUX_DEV: Final[str] = "runware:400@1"  # FLUX.2 Dev
+RUNWARE_FLUX_KLEIN: Final[str] = "runware:400@2"  # FLUX.2 Klein 9B (4-step distilled, fast)
+RUNWARE_FLUX_KLEIN_BASE: Final[str] = "runware:400@3"  # FLUX.2 Klein 9B Base (undistilled)
+RUNWARE_FLUX_MAX: Final[str] = "bfl:7@1"  # FLUX.2 Max (highest quality)
+
+# Alias for backwards compatibility
+RUNWARE_FLUX_SCHNELL: Final[str] = RUNWARE_FLUX_KLEIN  # Klein is the FLUX.2 "fast" equivalent
 
 # =============================================================================
 # API Endpoints
@@ -91,7 +97,7 @@ def get_anthropic_api_key() -> str:
     return key
 
 
-def get_runware_api_key() -> str:
+def get_runware_api_key() -> str | None:
     """Get Runware API key from environment."""
     key = os.environ.get("RUNWARE_API_KEY")
     # Return None if not set, we'll fall back to BFL

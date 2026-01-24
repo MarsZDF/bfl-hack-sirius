@@ -24,14 +24,17 @@ pip install -e .
 
 You need API keys for:
 1. **Anthropic** (Claude Vision): `ANTHROPIC_API_KEY`
-2. **Black Forest Labs** (FLUX.2): `BFL_API_KEY`
+2. **Image Generation** (choose one):
+   - **Black Forest Labs** (FLUX.2): `BFL_API_KEY`
+   - **Runware** (FLUX.2 via Runware): `RUNWARE_API_KEY`
 
 Create a `.env` file in your project root:
 
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
 BFL_API_KEY=bfl-...
-```
+# OR use Runware instead:
+# RUNWARE_API_KEY=rw-...
 
 ## 📖 Usage
 
@@ -48,6 +51,28 @@ result = morph(
 )
 
 print(f"Video created at: {result.video_path}")
+```
+
+### Preview What Claude Sees
+
+```python
+from sirius import plan_morph, TransitionStyle
+
+# Plan the transition and inspect the analysis
+plan = plan_morph(
+    "cat.png",
+    "dog.png",
+    frame_count=8,
+    transition_style=TransitionStyle.MORPH
+)
+
+# See what Claude extracted from each image
+print(plan.analysis_a.describe())
+print(plan.analysis_b.describe())
+
+# See all generated prompts
+for i, prompt in enumerate(plan.prompts):
+    print(f"[{i+1}] {prompt[:80]}...")
 ```
 
 ### Advanced Control
@@ -112,7 +137,10 @@ Configuration is handled via `_config.py` but can be overridden at runtime.
 | Environment Variable | Description |
 |----------------------|-------------|
 | `ANTHROPIC_API_KEY` | Required for Director (Claude) |
-| `BFL_API_KEY` | Required for Animator (FLUX) |
+| `BFL_API_KEY` | Required for Animator (FLUX via BFL) |
+| `RUNWARE_API_KEY` | Alternative: FLUX via Runware |
+
+If both `BFL_API_KEY` and `RUNWARE_API_KEY` are set, Runware is preferred.
 
 ## 🧪 Testing
 
