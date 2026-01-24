@@ -22,10 +22,9 @@ Example:
 __version__ = "0.1.0"
 
 # Main API
-from .pipeline import morph, morph_async, morph_stream, plan_morph
-
 # Types
 from ._types import (
+    AspectRatio,
     Frame,
     GenerationConfig,
     ImageAnalysis,
@@ -34,14 +33,11 @@ from ._types import (
     TransitionStyle,
     VideoConfig,
 )
+from .animator import animate, create_config, generate_frames_parallel
 
-# Progress & Cancellation
-from .progress import (
-    CancellationToken,
-    MorphStage,
-    ProgressCallback,
-    ProgressUpdate,
-)
+# Individual pipeline stages (for advanced usage)
+from .director import analyze_images, describe_changes, describe_images, direct, plan_transition
+from .editor import add_ambient_audio, add_audio, assemble_gif, assemble_video, create_preview, edit
 
 # Exceptions
 from .exceptions import (
@@ -58,11 +54,15 @@ from .exceptions import (
     VideoEncodingError,
     VisionAPIError,
 )
+from .pipeline import morph, morph_async, morph_stream, plan_morph
 
-# Individual pipeline stages (for advanced usage)
-from .director import analyze_images, describe_images, direct, plan_transition
-from .animator import animate, create_config, generate_frames_parallel
-from .editor import assemble_gif, assemble_video, create_preview, edit
+# Progress & Cancellation
+from .progress import (
+    CancellationToken,
+    MorphStage,
+    ProgressCallback,
+    ProgressUpdate,
+)
 
 __all__ = [
     # Version
@@ -73,6 +73,7 @@ __all__ = [
     "morph_stream",
     "plan_morph",
     # Types
+    "AspectRatio",
     "Frame",
     "GenerationConfig",
     "ImageAnalysis",
@@ -100,6 +101,7 @@ __all__ = [
     "VisionAPIError",
     # Pipeline stages
     "analyze_images",
+    "describe_changes",
     "describe_images",
     "animate",
     "assemble_gif",
@@ -110,4 +112,7 @@ __all__ = [
     "edit",
     "generate_frames_parallel",
     "plan_transition",
+    # Audio
+    "add_audio",
+    "add_ambient_audio",
 ]

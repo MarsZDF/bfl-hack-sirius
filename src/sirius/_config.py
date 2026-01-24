@@ -19,7 +19,7 @@ DEFAULT_WORKERS: Final[int] = 4  # Parallel generation (Carmack feedback)
 # Video Defaults
 # =============================================================================
 
-DEFAULT_FRAMERATE: Final[int] = 12  # Smooth but forgiving
+DEFAULT_FRAMERATE: Final[int] = 8  # Slower framerate to appreciate the morph (2s for 16 frames)
 DEFAULT_VIDEO_QUALITY: Final[int] = 23  # CRF value (lower = better)
 
 # =============================================================================
@@ -128,6 +128,35 @@ TRANSITION_DESCRIPTIONS: Final[dict[str, str]] = {
         "Create dreamlike, artistic transitions. Take creative liberties "
         "with abstract intermediates. The middle frames can be surreal, "
         "impossible, or fantastical before resolving to the end state."
+    ),
+    "timelapse": (
+        "Create a time-passing transition. If the START and END show the SAME subject "
+        "(e.g., same person, same building, same location), show aging/weathering/seasons. "
+        "If the subjects are DIFFERENT (e.g., cat to dog), interpret 'time passing' more "
+        "abstractly: show the START subject fading into memory/mist while the END subject "
+        "emerges from the future. Use visual metaphors like fog, light rays, or dissolving "
+        "particles to bridge unrelated subjects through time. "
+        "Early frames: subtle changes or ethereal overlay. "
+        "Middle frames: dreamlike transition state. "
+        "Final frames: resolve clearly to END."
+    ),
+    "metamorphosis": (
+        "Create a biological transformation sequence. The subject physically "
+        "transforms like a caterpillar becoming a butterfly. Show intermediate "
+        "biological stages: cocoon, partial emergence, wing unfolding. "
+        "The transformation should feel organic and alive."
+    ),
+    "glitch": (
+        "Create a digital corruption aesthetic transition. Introduce pixel "
+        "artifacts, color channel shifts, scan lines, and data moshing effects. "
+        "The image should appear to glitch and corrupt as it transforms, "
+        "with RGB splits, block artifacts, and digital noise increasing then resolving."
+    ),
+    "painterly": (
+        "Create an art style evolution. Transform through painting styles: "
+        "start realistic, move through impressionist brushstrokes, then "
+        "expressionist colors, cubist fragmentation, and resolve to the end style. "
+        "Each frame should look like a different artist painted the same scene."
     ),
 }
 

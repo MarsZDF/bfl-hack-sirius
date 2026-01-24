@@ -11,7 +11,6 @@ from ._config import (
     DEFAULT_HEIGHT,
     DEFAULT_SEED,
     DEFAULT_STEPS,
-    DEFAULT_VIDEO_QUALITY,
     DEFAULT_WIDTH,
     DEFAULT_WORKERS,
 )
@@ -24,6 +23,38 @@ class TransitionStyle(str, Enum):
     NARRATIVE = "narrative"  # Story-driven transition
     FADE = "fade"  # Gradual style/subject blend
     SURREAL = "surreal"  # Creative dreamlike transitions
+    TIMELAPSE = "timelapse"  # Time passing (aging, seasons, decay)
+    METAMORPHOSIS = "metamorphosis"  # Biological transformation (caterpillar→butterfly)
+    GLITCH = "glitch"  # Digital corruption aesthetic
+    PAINTERLY = "painterly"  # Art style evolution (photo→impressionist→cubist)
+
+
+class AspectRatio(str, Enum):
+    """Common aspect ratios for output video."""
+
+    LANDSCAPE = "16:9"  # YouTube, desktop (1024x576)
+    PORTRAIT = "9:16"  # TikTok, Instagram Stories, Reels (576x1024)
+    SQUARE = "1:1"  # Instagram feed (768x768)
+    CINEMATIC = "21:9"  # Ultra-wide (1024x439)
+    PHOTO = "4:3"  # Classic photo (768x576)
+
+    def get_dimensions(self, base_size: int = 1024) -> tuple[int, int]:
+        """Get width x height for this aspect ratio.
+
+        Args:
+            base_size: The larger dimension size.
+
+        Returns:
+            Tuple of (width, height).
+        """
+        ratios = {
+            "16:9": (base_size, int(base_size * 9 / 16)),
+            "9:16": (int(base_size * 9 / 16), base_size),
+            "1:1": (int(base_size * 0.75), int(base_size * 0.75)),  # 768x768
+            "21:9": (base_size, int(base_size * 9 / 21)),
+            "4:3": (int(base_size * 0.75), int(base_size * 0.75 * 3 / 4)),
+        }
+        return ratios.get(self.value, (base_size, int(base_size * 9 / 16)))
 
 
 @dataclass
