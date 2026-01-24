@@ -1,9 +1,18 @@
-"""Data types for Sirius image morphing pipeline."""
+"Data types for Sirius image morphing pipeline."
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any
+
+from ._config import (
+    DEFAULT_FRAMERATE,
+    DEFAULT_GUIDANCE,
+    DEFAULT_HEIGHT,
+    DEFAULT_STEPS,
+    DEFAULT_WIDTH,
+    DEFAULT_WORKERS,
+)
 
 
 class TransitionStyle(str, Enum):
@@ -108,12 +117,12 @@ class TransitionPlan:
 class GenerationConfig:
     """Configuration for FLUX.2 image generation."""
 
-    seed: int = 42
-    guidance: float = 3.5
-    width: int = 1024
-    height: int = 576
-    steps: int = 28
-    workers: int = 4  # Parallel generation workers (Carmack feedback)
+    seed: int = DEFAULT_SEED
+    guidance: float = DEFAULT_GUIDANCE
+    width: int = DEFAULT_WIDTH
+    height: int = DEFAULT_HEIGHT
+    steps: int = DEFAULT_STEPS
+    workers: int = DEFAULT_WORKERS
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -154,7 +163,7 @@ class Frame:
 class VideoConfig:
     """Configuration for video assembly."""
 
-    framerate: int = 12
+    framerate: int = DEFAULT_FRAMERATE
     codec: str = "libx264"
     pixel_format: str = "yuv420p"
     quality: int = 23  # CRF value (lower = better quality)
