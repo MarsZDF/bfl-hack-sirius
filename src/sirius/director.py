@@ -70,9 +70,10 @@ Style: {transition_style}
 
 === CRITICAL RULES ===
 
-1. PACING: Frame 1 MUST be visually indistinguishable from the START IMAGE description.
-   Frame {num_frames} MUST be visually indistinguishable from the END IMAGE description.
-   Distribute the transformation LINEARLY between them.
+1. PACING: Frame 1 should be a very subtle evolution of the START IMAGE (approx 90% Start, 10% End). 
+   Frame {num_frames} should be the final stage just before the END IMAGE (approx 10% Start, 90% End).
+   The transformation must be LINEAR and gradual. Frame 1 must preserve the EXACT composition and 
+   subject placement of the START IMAGE to ensure a smooth hand-off from the photo.
 
 2. LIGHTING: {lighting_instruction}
    The light source direction MUST remain consistent unless the style explicitly allows shifts.
