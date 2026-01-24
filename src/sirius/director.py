@@ -59,7 +59,10 @@ START PROMPT (detailed):
 END PROMPT (detailed):
 {prompt_b}
 
-USER NOTES: {user_context}
+=== CRITICAL USER INSTRUCTION ===
+The user has explicitly requested: "{user_context}"
+You MUST incorporate this direction into EVERY prompt.
+If the style requested conflicts with the original images, prioritize the User's requested style/elements.
 
 === TRANSITION STYLE ===
 Style: {transition_style}
