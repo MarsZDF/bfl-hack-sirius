@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sirius"
+version = "0.1.0"
+description = "AI image morphing pipeline using Claude Vision + FLUX.2 for BFL Hackathon"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = [
+    "image-morphing",
+    "video-generation",
+    "flux",
+    "claude",
+    "ai",
+    "bfl-hackathon",
+    "animation",
+    "transitions",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "anthropic>=0.39.0",
+    "requests>=2.31.0",
+    "pillow>=10.0.0",
+    "imageio[ffmpeg]>=2.31.0",
+    "elemental-gallium[grid]",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/MarsZDF/sirius"
+Repository = "https://github.com/MarsZDF/sirius"
+"Bug Tracker" = "https://github.com/MarsZDF/sirius/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sirius"]
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = [
+    "--cov=sirius",
+    "--cov-report=term-missing",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
