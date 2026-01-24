@@ -29,11 +29,11 @@ DEFAULT_VIDEO_QUALITY: Final[int] = 23  # CRF value (lower = better)
 # BFL FLUX.2 Models
 FLUX_DEV: Final[str] = "flux-dev"  # Development, supports guidance/steps
 FLUX_KLEIN: Final[str] = "flux-2-klein-9b"  # Fast generation
-FLUX_PRO: Final[str] = "flux-pro-1.1"  # Highest quality
+FLUX_PRO: Final[str] = "flux-2-pro"  # Highest quality (FLUX.2 Pro)
 
 # Default models for different roles
 ANCHOR_MODEL: Final[str] = FLUX_PRO  # Quality for first/last frames
-ANIMATOR_MODEL: Final[str] = FLUX_KLEIN  # Speed for middle frames
+ANIMATOR_MODEL: Final[str] = FLUX_PRO  # Use Pro for all frames (as requested)
 
 # Claude model
 CLAUDE_MODEL: Final[str] = "claude-sonnet-4-20250514"
