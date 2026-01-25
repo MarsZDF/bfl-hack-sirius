@@ -3,8 +3,8 @@
 from typing import Any
 
 from ._anthropic_client import ClaudeClient
-from ._config import FLUX_CONSISTENCY_PARAMS, TRANSITION_DESCRIPTIONS
-from ._types import ImageAnalysis, TransitionPlan, TransitionStyle
+from ._config import FLUX_CONSISTENCY_PARAMS, TRANSFORM_DESCRIPTIONS, TRANSITION_DESCRIPTIONS
+from ._types import ImageAnalysis, TransitionPlan, TransitionStyle, TransformType
 from .exceptions import AnalysisError, AnalysisParseError
 
 # =============================================================================
@@ -505,3 +505,201 @@ def describe_changes(
         "time_passed": response.get("time_passed", "unknown"),
         "mood_shift": response.get("mood_shift", ""),
     }
+
+
+# =============================================================================
+# Single-Image Transform (Age, Seasons, Bloom, etc.)
+# =============================================================================
+
+SINGLE_IMAGE_ANALYSIS_PROMPT = """Analyze this image for AI image generation recreation.
+
+Extract:
+1. Subject: What is the main subject? (front-load this in prompts - FLUX reads left-to-right)
+2. Style: Art style (photo, illustration, painting, 3D render, etc.)
+3. Lighting: Describe like a photographer (direction, quality, color temperature)
+4. Mood: Emotional tone (serene, energetic, mysterious, etc.)
+5. Colors: List 3-5 dominant colors as BOTH name AND hex code (e.g., "deep navy #1a365d")
+6. Full Prompt: Write a FLUX-optimized prompt
+7. Summary: One-line summary of the image
+
+Return as JSON:
+{
+  "subject": "...",
+  "style": "...",
+  "lighting": "...",
+  "mood": "...",
+  "colors": ["color1 #hex", "color2 #hex", ...],
+  "prompt": "...",
+  "summary": "..."
+}"""
+
+TRANSFORM_PLANNER_PROMPT = """
+You are generating {num_frames} image descriptions showing a "{transform_type}" transformation.
+
+=== SOURCE IMAGE ===
+{summary}
+
+Full description: {prompt}
+
+=== TRANSFORMATION TYPE: {transform_type} ===
+{transform_instructions}
+
+=== CRITICAL RULES ===
+
+1. PACING: Frame 1 should be nearly identical to the source (95% similar).
+   Each subsequent frame shows gradual progression.
+   Frame {num_frames} shows the final transformed state.
+
+2. POSITIVE OUTCOMES ONLY:
+   - For living subjects: ALWAYS show healthy, happy, thriving outcomes
+   - NEVER show death, decay, illness, or sadness
+   - A kitten becomes a majestic, content adult cat
+   - A puppy becomes a happy, healthy adult dog
+   - A child becomes a confident, smiling young adult
+   - A flower becomes fully bloomed, not wilted
+
+3. CONSISTENCY: Maintain the same:
+   - Subject identity (same individual throughout)
+   - Setting/background (unless transformation requires change)
+   - Art style: "{style}"
+   - Lighting direction (shift quality/warmth as needed)
+
+4. FLUX PROMPTING: Use this structure for each frame:
+   "[Subject at stage]. [Setting]. [Details]. [Lighting]. [Mood]."
+   Front-load the subject. Use hex codes for colors.
+
+=== OUTPUT FORMAT ===
+Return a JSON array of exactly {num_frames} strings. No markdown, no explanation.
+
+[
+  "frame 1 prompt here",
+  "frame 2 prompt here",
+  ...
+]
+"""
+
+
+def analyze_single_image(
+    image_path: str,
+    client: ClaudeClient | None = None,
+) -> ImageAnalysis:
+    """Analyze a single image for transformation.
+
+    Args:
+        image_path: Path to the image.
+        client: Optional Claude client.
+
+    Returns:
+        ImageAnalysis object.
+    """
+    if client is None:
+        client = ClaudeClient()
+
+    response = client.analyze_single_image(image_path, SINGLE_IMAGE_ANALYSIS_PROMPT)
+
+    return ImageAnalysis(
+        prompt=response.get("prompt", ""),
+        subject=response.get("subject", ""),
+        style=response.get("style", ""),
+        lighting=response.get("lighting", ""),
+        mood=response.get("mood", ""),
+        colors=response.get("colors", []),
+        summary=response.get("summary", ""),
+    )
+
+
+def plan_transform(
+    analysis: ImageAnalysis,
+    transform_type: TransformType | str,
+    frame_count: int = 16,
+    client: ClaudeClient | None = None,
+) -> TransitionPlan:
+    """Plan a single-image transformation (age, seasons, bloom, etc.).
+
+    Args:
+        analysis: Analysis of the source image.
+        transform_type: Type of transformation to apply.
+        frame_count: Number of frames to generate.
+        client: Optional Claude client.
+
+    Returns:
+        TransitionPlan with prompts for each frame.
+    """
+    if client is None:
+        client = ClaudeClient()
+
+    if isinstance(transform_type, str):
+        transform_type = TransformType(transform_type)
+
+    transform_instructions = TRANSFORM_DESCRIPTIONS.get(
+        transform_type.value,
+        "Show a positive, uplifting transformation of the subject."
+    )
+
+    prompt = TRANSFORM_PLANNER_PROMPT.format(
+        num_frames=frame_count,
+        transform_type=transform_type.value,
+        summary=analysis.summary,
+        prompt=analysis.prompt,
+        transform_instructions=transform_instructions,
+        style=analysis.style,
+    )
+
+    response_text = client.generate_text(prompt)
+    prompts = _parse_transition_response(response_text, frame_count)
+
+    # For single-image transform, analysis_b is a "projected" end state
+    # We'll create a placeholder that describes the expected outcome
+    analysis_b = ImageAnalysis(
+        prompt=prompts[-1] if prompts else "",
+        subject=f"{analysis.subject} (transformed)",
+        style=analysis.style,
+        lighting=analysis.lighting,
+        mood="positive, thriving",
+        colors=analysis.colors,
+        summary=f"Transformed: {analysis.summary}",
+    )
+
+    return TransitionPlan(
+        prompts=prompts,
+        frame_count=frame_count,
+        transition_style=TransitionStyle.METAMORPHOSIS,  # Closest match
+        analysis_a=analysis,
+        analysis_b=analysis_b,
+    )
+
+
+def transform(
+    image_path: str,
+    transform_type: TransformType | str = TransformType.AGE,
+    frame_count: int = 16,
+    client: ClaudeClient | None = None,
+) -> TransitionPlan:
+    """Single-image transformation: analyze and plan in one call.
+
+    This is for transformations that only need ONE input image:
+    - age: Show subject growing/maturing (kitten → adult cat)
+    - seasons: Cycle through seasons
+    - bloom: Show growth and flourishing
+    - sunrise: Night to dawn
+    - dream: Transform into magical version
+
+    Args:
+        image_path: Path to source image.
+        transform_type: Type of transformation.
+        frame_count: Number of frames to generate.
+        client: Optional Claude client.
+
+    Returns:
+        TransitionPlan ready for animation.
+
+    Example:
+        >>> from sirius import transform, TransformType
+        >>> plan = transform("kitten.jpg", TransformType.AGE)
+        >>> # Shows kitten growing into happy adult cat
+    """
+    if client is None:
+        client = ClaudeClient()
+
+    analysis = analyze_single_image(image_path, client)
+    return plan_transform(analysis, transform_type, frame_count, client)

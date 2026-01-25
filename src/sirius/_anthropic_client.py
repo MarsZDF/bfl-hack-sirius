@@ -142,6 +142,18 @@ class ClaudeClient:
         # Parse JSON from response
         return self._parse_json_response(text_content)
 
+    def analyze_single_image(self, image_path: str, prompt: str) -> dict[str, Any]:
+        """Analyze a single image (alias for analyze_image).
+
+        Args:
+            image_path: Path to image file.
+            prompt: Analysis prompt.
+
+        Returns:
+            Parsed JSON response.
+        """
+        return self.analyze_image(image_path, prompt)
+
     def analyze_image_pair(
         self,
         image_a_path: str,

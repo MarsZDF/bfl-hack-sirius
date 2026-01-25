@@ -29,6 +29,16 @@ class TransitionStyle(str, Enum):
     PAINTERLY = "painterly"  # Art style evolution (photo→impressionist→cubist)
 
 
+class TransformType(str, Enum):
+    """Single-image transformation types (no end image needed)."""
+
+    AGE = "age"  # Show subject growing/maturing (always positive!)
+    SEASONS = "seasons"  # Cycle through seasons
+    BLOOM = "bloom"  # Growth and flourishing
+    SUNRISE = "sunrise"  # Night to golden dawn
+    DREAM = "dream"  # Transform into magical/fantasy version
+
+
 class AspectRatio(str, Enum):
     """Common aspect ratios for output video."""
 

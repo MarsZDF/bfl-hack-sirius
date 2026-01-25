@@ -131,7 +131,7 @@ TRANSITION_DESCRIPTIONS: Final[dict[str, str]] = {
     ),
     "timelapse": (
         "Create a time-passing transition. If the START and END show the SAME subject "
-        "(e.g., same person, same building, same location), show aging/weathering/seasons. "
+        "(e.g., same person, same building, same location), show positive aging or seasonal change. "
         "If the subjects are DIFFERENT (e.g., cat to dog), interpret 'time passing' more "
         "abstractly: show the START subject fading into memory/mist while the END subject "
         "emerges from the future. Use visual metaphors like fog, light rays, or dissolving "
@@ -144,7 +144,8 @@ TRANSITION_DESCRIPTIONS: Final[dict[str, str]] = {
         "Create a biological transformation sequence. The subject physically "
         "transforms like a caterpillar becoming a butterfly. Show intermediate "
         "biological stages: cocoon, partial emergence, wing unfolding. "
-        "The transformation should feel organic and alive."
+        "The transformation should feel organic, alive, and uplifting. "
+        "IMPORTANT: Always end with a positive, thriving outcome."
     ),
     "glitch": (
         "Create a digital corruption aesthetic transition. Introduce pixel "
@@ -157,6 +158,42 @@ TRANSITION_DESCRIPTIONS: Final[dict[str, str]] = {
         "start realistic, move through impressionist brushstrokes, then "
         "expressionist colors, cubist fragmentation, and resolve to the end style. "
         "Each frame should look like a different artist painted the same scene."
+    ),
+}
+
+# =============================================================================
+# Single-Image Transform Descriptions (for one-image mode)
+# =============================================================================
+
+TRANSFORM_DESCRIPTIONS: Final[dict[str, str]] = {
+    "age": (
+        "Show the subject growing and maturing over time. "
+        "For young animals: show them growing into healthy, happy adults. "
+        "For children: show them growing into confident young adults. "
+        "For adults: show graceful, dignified aging with wisdom. "
+        "IMPORTANT: Always show POSITIVE growth - health, happiness, thriving. "
+        "Never show decay, illness, or death. The final frame should be the subject "
+        "at their prime or peacefully content."
+    ),
+    "seasons": (
+        "Show the scene transitioning through seasons: spring blooming, "
+        "summer vibrancy, autumn colors, winter snow, then back to spring. "
+        "Focus on the beauty of each season. End with renewal and new growth."
+    ),
+    "bloom": (
+        "Show growth and flourishing. Seeds becoming sprouts, buds opening, "
+        "flowers blooming, gardens thriving. Everything becomes more vibrant "
+        "and alive. End with full, beautiful bloom."
+    ),
+    "sunrise": (
+        "Transform the scene from night/darkness to golden sunrise. "
+        "Show the gradual lightening, first rays of sun, warm golden light "
+        "flooding the scene. End with a beautiful, hopeful dawn."
+    ),
+    "dream": (
+        "Transform the scene into a magical, dreamlike version. "
+        "Add sparkles, soft glow, fantastical elements. Make it more "
+        "whimsical and enchanted with each frame. Pure positive fantasy."
     ),
 }
 

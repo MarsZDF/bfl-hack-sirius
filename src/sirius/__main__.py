@@ -13,8 +13,8 @@ import time
 from rich.console import Console
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
-from . import AspectRatio, GenerationConfig, TransitionStyle, __version__, morph
-from .director import describe_changes
+from . import AspectRatio, GenerationConfig, TransformType, TransitionStyle, __version__, morph
+from .director import describe_changes, transform
 from .editor import add_ambient_audio, add_audio
 from .progress import MorphStage, ProgressUpdate
 
@@ -69,6 +69,109 @@ def print_speedup_stats(stats: dict, total_time: float) -> None:
         console.print(f"   [bold cyan]Speedup: {speedup:.1f}x[/bold cyan] (parallel generation)")
 
 
+def handle_transform(args) -> int:
+    """Handle single-image transform mode."""
+    from pathlib import Path
+    from .animator import animate, create_config
+
+    transform_type = TransformType(args.transform)
+    aspect = AspectRatio(args.aspect)
+    width, height = aspect.get_dimensions()
+
+    console.print(f"[bold blue]🌟 Sirius v{__version__} - Transform Mode[/bold blue]")
+    console.print(f"   Image:     {args.image_a}")
+    console.print(f"   Transform: {transform_type.value}")
+    console.print(f"   Aspect:    {args.aspect} ({width}x{height})")
+    console.print(f"   Frames:    {args.frames}")
+    console.print()
+
+    # Determine output
+    output_dir = "outputs"
+    video_name = None
+    if args.output:
+        output_path = Path(args.output)
+        output_dir = str(output_path.parent) if output_path.parent != Path(".") else "outputs"
+        video_name = output_path.name
+
+    stats: dict = {}
+    start_time = time.time()
+
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Planning transformation...", total=100)
+
+            # Get transform plan
+            plan = transform(
+                args.image_a,
+                transform_type=transform_type,
+                frame_count=args.frames,
+            )
+            progress.update(task, completed=20, description="Generating frames...")
+
+            # Create generation config
+            gen_config = GenerationConfig(
+                width=width,
+                height=height,
+                seed=args.seed,
+            )
+
+            # Generate frames
+            def on_frame_progress(current: int, total: int, msg: str) -> None:
+                pct = 20 + (current / total) * 70
+                progress.update(task, completed=pct, description=msg)
+
+            frames = animate(
+                plan=plan,
+                config=gen_config,
+                output_dir=str(Path(output_dir) / "frames"),
+                use_anchors=not args.preview,
+                preview=args.preview,
+                on_progress=on_frame_progress,
+                image_a=args.image_a,
+            )
+
+            progress.update(task, completed=90, description="Assembling video...")
+
+            # Assemble video
+            from .editor import edit, create_preview as make_preview
+            from ._types import VideoConfig
+
+            if args.preview:
+                video_filename = video_name or f"transform_preview.jpg"
+                video_path = str(Path(output_dir) / video_filename)
+                make_preview(frames, video_path)
+            else:
+                video_filename = video_name or f"transform_{transform_type.value}.mp4"
+                video_path = str(Path(output_dir) / "videos" / video_filename)
+                Path(video_path).parent.mkdir(parents=True, exist_ok=True)
+                video_config = VideoConfig(boomerang=args.boomerang)
+                edit(frames, video_path, video_config)
+
+            progress.update(task, completed=100, description="Done!")
+
+        total_time = time.time() - start_time
+
+        console.print()
+        console.print(f"[bold green]✨ Done![/bold green] Total time: {total_time:.1f}s")
+        console.print(f"   Output: [link=file://{video_path}]{video_path}[/link]")
+
+        return 0
+
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Cancelled by user[/yellow]")
+        return 130
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}")
+        return 1
+
+
 def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
@@ -78,13 +181,25 @@ def main() -> int:
     )
 
     parser.add_argument("image_a", help="Path to source image")
-    parser.add_argument("image_b", help="Path to target image")
+    parser.add_argument("image_b", nargs="?", help="Path to target image (optional if using --transform)")
     parser.add_argument("-o", "--output", help="Output video path (default: outputs/morph.mp4)")
     parser.add_argument(
         "-s", "--style",
         choices=["morph", "narrative", "fade", "surreal", "timelapse", "metamorphosis", "glitch", "painterly"],
         default="morph",
         help="Transition style (default: morph)",
+    )
+    parser.add_argument(
+        "-t", "--transform",
+        choices=["age", "seasons", "bloom", "sunrise", "dream"],
+        help=(
+            "Single-image transform (no end image needed). "
+            "age: show subject growing up (always positive!), "
+            "seasons: cycle through seasons, "
+            "bloom: growth and flourishing, "
+            "sunrise: night to dawn, "
+            "dream: transform into magical version"
+        ),
     )
     parser.add_argument(
         "-a", "--aspect",
@@ -149,8 +264,14 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    # Validate: if no transform mode, image_b is required
+    if not args.transform and not args.image_b and not args.describe:
+        parser.error("image_b is required (or use --transform for single-image mode)")
+
     # Handle --describe mode (no video generation)
     if args.describe:
+        if not args.image_b:
+            parser.error("--describe requires both image_a and image_b")
         console.print("[bold blue]🔍 Analyzing changes...[/bold blue]")
         console.print(f"   Before: {args.image_a}")
         console.print(f"   After:  {args.image_b}")
@@ -174,6 +295,10 @@ def main() -> int:
         except Exception as e:
             console.print(f"[bold red]Error:[/bold red] {e}")
             return 1
+
+    # Handle --transform mode (single image)
+    if args.transform:
+        return handle_transform(args)
 
     # Parse style and aspect ratio
     style = TransitionStyle(args.style)

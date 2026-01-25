@@ -29,6 +29,7 @@ from ._types import (
     GenerationConfig,
     ImageAnalysis,
     MorphResult,
+    TransformType,
     TransitionPlan,
     TransitionStyle,
     VideoConfig,
@@ -36,7 +37,16 @@ from ._types import (
 from .animator import animate, create_config, generate_frames_parallel
 
 # Individual pipeline stages (for advanced usage)
-from .director import analyze_images, describe_changes, describe_images, direct, plan_transition
+from .director import (
+    analyze_images,
+    analyze_single_image,
+    describe_changes,
+    describe_images,
+    direct,
+    plan_transition,
+    plan_transform,
+    transform,
+)
 from .editor import add_ambient_audio, add_audio, assemble_gif, assemble_video, create_preview, edit
 
 # Exceptions
@@ -78,6 +88,7 @@ __all__ = [
     "GenerationConfig",
     "ImageAnalysis",
     "MorphResult",
+    "TransformType",
     "TransitionPlan",
     "TransitionStyle",
     "VideoConfig",
@@ -101,6 +112,7 @@ __all__ = [
     "VisionAPIError",
     # Pipeline stages
     "analyze_images",
+    "analyze_single_image",
     "describe_changes",
     "describe_images",
     "animate",
@@ -111,7 +123,9 @@ __all__ = [
     "direct",
     "edit",
     "generate_frames_parallel",
+    "plan_transform",
     "plan_transition",
+    "transform",
     # Audio
     "add_audio",
     "add_ambient_audio",
