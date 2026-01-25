@@ -1,73 +1,151 @@
 # Sirius 🌟
 
-**The AI Cinematographer: Seamless Image Morphing with Claude + FLUX.2**
+**AI Image Morphing Pipeline using Claude Vision + FLUX.2**
 
-> 🏆 **Built for the BFL Hackathon (Jan 2026)**
+Sirius is a high-performance Python library that creates smooth, narrative-driven video transitions between two images. It uses **Claude Vision** to understand the content and style of your images, and **FLUX.2** (via BFL API) to generate high-quality intermediate frames that blend them seamlessly.
 
-Sirius is a high-performance Python library that transforms any two static images into a smooth, narrative-driven video transition. It combines **Claude 3.5 Sonnet (Vision)** to "direct" the scene and **FLUX.2** (via Runware/BFL) to "animate" high-fidelity frames.
-
-<div align="center">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-  <br/>
-  <b>TikTok-Ready (9:16) • Parallel Generation • Interactive Director</b>
-</div>
+> Built for the BFL Hackathon (Jan 2026).
 
 ## ✨ Key Features
 
--   📱 **TikTok-First**: Defaults to **9:16 (720x1280)** vertical video, perfect for Reels/Shorts.
--   🎬 **AI Director**: Uses **Claude Vision** to analyze your images and write a frame-by-frame screenplay, ensuring narrative consistency.
--   ⚡ **Parallel Rendering**: Generates 16 frames in parallel using an async **Runware** client, cutting render time by 4x.
--   🎨 **Style Control**: Inject your own direction (e.g., *"Make it cyberpunk with fire"*) and watch the transition adapt.
--   🛡️ **Robust Pipeline**: Includes automatic retries, soft-failure fallbacks (cross-dissolve), and perfect anchor fidelity (using original images).
+- **Intelligent Director**: Uses Claude Vision to analyze your start/end images and "screenwrite" a transition plan.
+- **Narrative Transitions**: Supports multiple styles (`morph`, `narrative`, `fade`, `surreal`) to control *how* the change happens.
+- **Parallel Generation**: Generates frames in parallel using the BFL FLUX.2 API (up to 4x faster).
+- **High Quality**: Uses `flux-pro-1.1` for anchor frames and `flux-2-klein-9b` for fast, consistent animation.
+- **Robust Pipeline**: Includes automatic retries, progress tracking (Codex-ready), and graceful error handling.
 
-## 🚀 Quick Start (Colab)
-
-The easiest way to try Sirius is via our interactive notebook:
-
-[**▶️ Open Demo in Google Colab**](https://colab.research.google.com/github/MarsZDF/bfl-hack-sirius/blob/main/demo.ipynb)
-
-## 📦 Installation
+## 🚀 Installation
 
 ```bash
-pip install git+https://github.com/MarsZDF/bfl-hack-sirius.git
+pip install -e .
 ```
 
-## 🏗 Architecture
-
-Sirius operates as a studio of three AI agents:
-
-1.  **The Director (`director.py`)**: 
-    -   *Brain:* Claude 3.5 Sonnet.
-    -   *Role:* Analyzes Start/End images. Writes a 16-part prompt sequence that evolves textual concepts linearly (e.g., "Cat" -> "Cat-Dog Hybrid" -> "Dog").
-    -   *Logic:* Enforces "Novelist" prompting style for FLUX.
-
-2.  **The Animator (`animator.py`)**: 
-    -   *Engine:* FLUX.2 (Pro/Dev/Klein).
-    -   *Role:* Executes the prompts. Uses **FLUX.1 [pro]** for high-res details and **FLUX.1 [dev]** for speed.
-    -   *Tech:* Uses `asyncio` and `Runware` websockets to generate frames concurrently.
-
-3.  **The Editor (`editor.py`)**: 
-    -   *Tool:* FFmpeg / ImageIO.
-    -   *Role:* Assembles the frames, handles resizing/padding (no stretching!), and applies framerate logic (8fps for smooth morphs).
-
-## 🛠 Configuration
+### Prerequisites
 
 You need API keys for:
-1.  **Anthropic**: `ANTHROPIC_API_KEY`
-2.  **Runware** (Recommended) or **BFL**: `RUNWARE_API_KEY`
+1. **Anthropic** (Claude Vision): `ANTHROPIC_API_KEY`
+2. **Image Generation** (choose one):
+   - **Black Forest Labs** (FLUX.2): `BFL_API_KEY`
+   - **Runware** (FLUX.2 via Runware): `RUNWARE_API_KEY`
 
-## 📖 Example
+Create a `.env` file in your project root:
+
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+BFL_API_KEY=bfl-...
+# OR use Runware instead:
+# RUNWARE_API_KEY=rw-...
+
+## 📖 Usage
+
+### Basic Morph
 
 ```python
 from sirius import morph
 
-# Create a cyberpunk transition for TikTok
+# Create a smooth transition video
 result = morph(
-    "me.jpg",
-    "avatar.jpg",
-    user_context="Transform into a neon-lit cyberpunk cyborg",
+    "assets/cat.png",
+    "assets/dog.png",
     output_dir="outputs"
 )
 
-print(f"Video saved: {result.video_path}")
+print(f"Video created at: {result.video_path}")
+```
+
+### Preview What Claude Sees
+
+```python
+from sirius import plan_morph, TransitionStyle
+
+# Plan the transition and inspect the analysis
+plan = plan_morph(
+    "cat.png",
+    "dog.png",
+    frame_count=8,
+    transition_style=TransitionStyle.MORPH
+)
+
+# See what Claude extracted from each image
+print(plan.analysis_a.describe())
+print(plan.analysis_b.describe())
+
+# See all generated prompts
+for i, prompt in enumerate(plan.prompts):
+    print(f"[{i+1}] {prompt[:80]}...")
+```
+
+### Advanced Control
+
+```python
+from sirius import morph, TransitionStyle
+
+# Create a "surreal" dreamlike transition
+result = morph(
+    "start.jpg",
+    "end.jpg",
+    frame_count=24,
+    transition_style=TransitionStyle.SURREAL,
+    boomerang=True,  # Loop A -> B -> A
+    seed=123
+)
+```
+
+### Async & Streaming (for UI/Web)
+
+```python
+import asyncio
+from sirius import morph_stream
+
+async def main():
+    image_a = "start.png"
+    image_b = "end.png"
+
+    # Stream progress updates
+    result, updates = await morph_stream(image_a, image_b)
+    
+    for update in updates:
+        print(f"{update.progress:.0%} - {update.message}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## 🏗 Architecture
+
+Sirius is composed of three main agents (modules):
+
+1.  **Director (`director.py`)**: 
+    -   **Role**: The Creative Lead.
+    -   **Tools**: Claude 3.5 Sonnet (Vision).
+    -   **Task**: Sees both images, analyzes style/lighting/subject, and writes a detailed prompt sequence to bridge them.
+
+2.  **Animator (`animator.py`)**: 
+    -   **Role**: The Production Studio.
+    -   **Tools**: BFL FLUX.2 API (Parallelized).
+    -   **Task**: Takes the prompts and generates frames. Uses `flux-pro` for keyframes and `flux-klein` for in-betweens.
+
+3.  **Editor (`editor.py`)**: 
+    -   **Role**: Post-Production.
+    -   **Tools**: `imageio` / `FFmpeg`.
+    -   **Task**: Assembles frames into a high-quality MP4 or GIF.
+
+## 🛠 Configuration
+
+Configuration is handled via `_config.py` but can be overridden at runtime.
+
+| Environment Variable | Description |
+|----------------------|-------------|
+| `ANTHROPIC_API_KEY` | Required for Director (Claude) |
+| `BFL_API_KEY` | Required for Animator (FLUX via BFL) |
+| `RUNWARE_API_KEY` | Alternative: FLUX via Runware |
+
+If both `BFL_API_KEY` and `RUNWARE_API_KEY` are set, Runware is preferred.
+
+## 🧪 Testing
+
+Run the test suite:
+
+```bash
+pytest
 ```
