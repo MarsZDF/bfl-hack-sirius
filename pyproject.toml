@@ -7,6 +7,7 @@ name = "sirius"
 version = "0.1.0"
 description = "AI image morphing pipeline using Claude Vision + FLUX.2 for BFL Hackathon"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
 keywords = [
     "image-morphing",
