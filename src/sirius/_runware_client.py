@@ -74,16 +74,20 @@ class RunwareClient:
         own_connection = self._runware is None
 
         try:
-            if not runware.connected:
-                await runware.connect()
+            # Ensure dimensions are multiples of 16 (Runware/Flux requirement)
+            safe_width = (width // 16) * 16
+            safe_height = (height // 16) * 16
+
+            if safe_width != width or safe_height != height:
+                print(f"📏 Adjusting dimensions to multiples of 16: {width}x{height} -> {safe_width}x{safe_height}")
 
             # Build request parameters dynamically
             params = {
                 "positivePrompt": prompt,
                 "model": model,
                 "seed": seed,
-                "width": width,
-                "height": height,
+                "width": safe_width,
+                "height": safe_height,
                 "outputType": "URL",
                 "outputFormat": "png",
             }
