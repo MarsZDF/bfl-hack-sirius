@@ -51,20 +51,26 @@ class AspectRatio(str, Enum):
     def get_dimensions(self, base_size: int = 1024) -> tuple[int, int]:
         """Get width x height for this aspect ratio.
 
+        All dimensions are rounded down to multiples of 16 (required by FLUX/Runware).
+
         Args:
             base_size: The larger dimension size.
 
         Returns:
-            Tuple of (width, height).
+            Tuple of (width, height), both multiples of 16.
         """
+        def round_to_16(x: int) -> int:
+            """Round down to nearest multiple of 16."""
+            return (x // 16) * 16
+
         ratios = {
-            "16:9": (base_size, int(base_size * 9 / 16)),
-            "9:16": (int(base_size * 9 / 16), base_size),
-            "1:1": (int(base_size * 0.75), int(base_size * 0.75)),  # 768x768
-            "21:9": (base_size, int(base_size * 9 / 21)),
-            "4:3": (int(base_size * 0.75), int(base_size * 0.75 * 3 / 4)),
+            "16:9": (round_to_16(base_size), round_to_16(int(base_size * 9 / 16))),
+            "9:16": (round_to_16(int(base_size * 9 / 16)), round_to_16(base_size)),
+            "1:1": (round_to_16(int(base_size * 0.75)), round_to_16(int(base_size * 0.75))),
+            "21:9": (round_to_16(base_size), round_to_16(int(base_size * 9 / 21))),
+            "4:3": (round_to_16(int(base_size * 0.75)), round_to_16(int(base_size * 0.75 * 3 / 4))),
         }
-        return ratios.get(self.value, (base_size, int(base_size * 9 / 16)))
+        return ratios.get(self.value, (round_to_16(base_size), round_to_16(int(base_size * 9 / 16))))
 
 
 @dataclass
